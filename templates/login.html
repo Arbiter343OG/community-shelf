@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | Shelf.io</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] flex items-center justify-center min-h-screen p-6">
+
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200">
+                <i data-lucide="layout-grid" class="text-white w-8 h-8"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Shelf.io</h1>
+            <p class="text-slate-500 font-medium mt-2">Community Inventory Management</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200">
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="bg-red-50 text-red-600 p-4 rounded-2xl mb-6 text-sm font-bold flex items-center gap-2 border border-red-100">
+                      <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                      {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Username</label>
+                    <input type="text" name="username" placeholder="admin or guest" required 
+                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required 
+                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 text-white font-extrabold py-4 rounded-2xl hover:bg-blue-600 transition-all shadow-lg mt-2 flex items-center justify-center gap-2">
+                    Enter System
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="mt-8 grid grid-cols-2 gap-4">
+            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                <p class="text-[9px] font-black text-blue-400 uppercase mb-1">Volunteer</p>
+                <p class="text-xs font-bold text-blue-700">User: admin</p>
+                <p class="text-xs font-bold text-blue-700">Pass: 123</p>
+            </div>
+            <div class="bg-slate-100/50 p-4 rounded-2xl border border-slate-200/50">
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Donor</p>
+                <p class="text-xs font-bold text-slate-600">User: guest</p>
+                <p class="text-xs font-bold text-slate-600">Pass: 123</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

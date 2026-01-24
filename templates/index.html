@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelf.io | Community Impact</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 min-h-screen">
+
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 p-2 rounded-lg text-white shadow-md">
+                    <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight">SHELF.IO</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex flex-col items-end">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">User: {{ user.username }}</span>
+                    <span class="text-xs font-bold text-blue-600 uppercase">{{ user.role }}</span>
+                </div>
+                <a href="/logout" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <aside class="lg:col-span-4 space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex items-center gap-2">
+                    <i data-lucide="heart" class="text-red-500 w-4 h-4"></i> Donor Portal
+                </h2>
+                <form action="/add" method="POST" class="space-y-4">
+                    <input type="text" name="name" placeholder="Item Name" required class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                    <select name="category" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                        <option value="Produce 🍎">Produce 🍎</option>
+                        <option value="Dairy 🥛">Dairy 🥛</option>
+                        <option value="Bakery 🍞">Bakery 🍞</option>
+                        <option value="Canned 🥫">Canned 🥫</option>
+                        <option value="General 📦">General 📦</option>
+                    </select>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> Add to Shelf
+                    </button>
+                </form>
+            </div>
+            
+            <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2">Live Inventory</p>
+                    <h3 class="text-4xl font-black">{{ items|length }}</h3>
+                </div>
+                <i data-lucide="package" class="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 rotate-12"></i>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-8">
+            <form action="/" method="GET" class="relative mb-6">
+                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search the shelf..." 
+                       class="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            </form>
+
+            <div class="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
+                <a href="/" class="px-5 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-50 transition">All</a>
+                <a href="/?q=Produce" class="px-5 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-50 transition">🍎 Produce</a>
+                <a href="/?q=Dairy" class="px-5 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-50 transition">🥛 Dairy</a>
+                <a href="/?q=Bakery" class="px-5 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-50 transition">🍞 Bakery</a>
+            </div>
+
+            {% if not items %}
+            <div class="bg-white rounded-[3rem] border-2 border-dashed border-slate-200 p-20 text-center">
+                <i data-lucide="search-x" class="w-12 h-12 text-slate-200 mx-auto mb-4"></i>
+                <p class="text-slate-500 font-bold">Nothing found on the shelf.</p>
+            </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for item in items %}
+                <div id="card-{{ item.id }}" class="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-blue-300 transition-all group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase mb-2 inline-block italic">
+                                {{ item.category }}
+                            </span>
+                            <h3 class="text-xl font-black text-slate-800 tracking-tight">{{ item.name }}</h3>
+                            <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-1 font-bold">
+                                <i data-lucide="clock" class="w-3 h-3"></i> {{ item.date_added.strftime('%b %d, %I:%M %p') }}
+                            </p>
+                        </div>
+                        
+                        <div class="flex flex-col items-end gap-2">
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}')" class="text-slate-400 hover:text-blue-500 p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                
+                                {% if user.role == 'volunteer' %}
+                                <button onclick="deleteItem({{ item.id }})" class="text-slate-400 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                {% endif %}
+                            </div>
+
+                            <div id="badge-container-{{ item.id }}">
+                                {% if item.quantity <= 5 %}
+                                <div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100">LOW</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        
+                        {% if user.role == 'volunteer' %}
+                        <button onclick="updateQty({{ item.id }}, 'decrease')" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-red-500 font-black hover:bg-red-50 active:scale-90 transition">Take</button>
+                        {% else %}
+                        <div class="w-12 h-12 flex items-center justify-center text-slate-300 italic text-[10px] font-bold text-center leading-tight">Admin Only</div>
+                        {% endif %}
+                        
+                        <div class="text-center">
+                            <span id="qty-{{ item.id }}" class="text-3xl font-black block">{{ item.quantity }}</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">In Stock</span>
+                        </div>
+
+                        <button onclick="updateQty({{ item.id }}, 'increase')" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-green-500 font-black hover:bg-green-50 active:scale-90 transition">+</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <div id="editModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl scale-95 transition-all">
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Edit Item</h2>
+            <form id="editForm" method="POST" class="space-y-4">
+                <input type="text" name="name" id="editName" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
+                <select name="category" id="editCategory" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none">
+                    <option value="Produce 🍎">Produce 🍎</option>
+                    <option value="Dairy 🥛">Dairy 🥛</option>
+                    <option value="Bakery 🍞">Bakery 🍞</option>
+                    <option value="Canned 🥫">Canned 🥫</option>
+                    <option value="General 📦">General 📦</option>
+                </select>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl">Cancel</button>
+                    <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        async function updateQty(id, action) {
+            const res = await fetch(`/update/${id}/${action}`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                const span = document.getElementById(`qty-${id}`);
+                const b = document.getElementById(`badge-container-${id}`);
+                span.innerText = data.new_qty;
+                if (data.new_qty <= 5) {
+                    b.innerHTML = `<div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100">LOW</div>`;
+                } else { b.innerHTML = ''; }
+                span.classList.add('scale-125', action === 'increase' ? 'text-green-600' : 'text-red-600');
+                setTimeout(() => span.classList.remove('scale-125', 'text-green-600', 'text-red-600'), 200);
+            } else {
+                alert("You don't have permission to take items!");
+            }
+        }
+        async function deleteItem(id) {
+            if (!confirm("Are you sure?")) return;
+            const res = await fetch(`/delete/${id}`, { method: 'POST' });
+            if (res.ok) { document.getElementById(`card-${id}`).remove(); location.reload(); }
+        }
+        function openEditModal(id, name, cat) {
+            document.getElementById('editForm').action = `/edit/${id}`;
+            document.getElementById('editName').value = name;
+            document.getElementById('editCategory').value = cat;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+        function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
