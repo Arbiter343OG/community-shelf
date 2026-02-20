@@ -1,30 +1,45 @@
-# 🍎 Shelf.io | Community Food Pantry Manager
+# 🍎 Shelf.io | Community Resource Logistics Engine
 
-Shelf.io is a lightweight, secure inventory management system designed for community food pantries. It bridges the gap between donors and volunteers, ensuring real-time visibility of stock levels to reduce food waste and improve community support.
+Shelf.io is a production-ready, secure inventory management system designed to optimize community food pantry operations. It facilitates a data-driven bridge between donors and volunteers, utilizing real-time auditing and role-based access control (RBAC) to minimize resource waste and maximize community impact.
 
-## 🚀 Key Features
-- **Role-Based Access:** Distinct permissions for 'Donors' (Guests) and 'Volunteers' (Admins).
-- **Real-Time Inventory:** Search, filter by category, and track stock quantities.
-- **Impact Tracking:** Live dashboard showing total items shared with the community.
-- **Mobile Responsive:** Clean, modern UI built with Tailwind CSS for use on-site at pantries.
+---
 
-## 🛠️ Tech Stack
-- **Backend:** Python (Flask)
-- **Database:** SQLAlchemy (SQLite/PostgreSQL)
-- **Auth:** Flask-Login (Password Hashing with PBKDF2)
-- **Frontend:** HTML5, Tailwind CSS, Lucide Icons
+## 🚀 Advanced Features
 
-## 🔐 Permissions Matrix
-| Action                | Donor (Guest) | Volunteer (Admin) |
-|-----------------------|:-------------:|:-----------------:|
-| Add New Items         |      ✅       |        ✅         |
-| Increase Stock (+)    |      ✅       |        ✅         |
-| Edit Details          |      ✅       |        ✅         |
-| Decrease Stock (Take) |      ❌       |        ✅         |
-| Delete Items          |      ❌       |        ✅         |
+- **Role-Based Access Control (RBAC):** Cryptographically secure permission tiers for 'Donors' and 'Volunteers'.
+- **Live Activity Auditing:** A comprehensive transaction log tracking every stock adjustment, addition, and deletion for accountability.
+- **Urgent Needs Heuristics:** Dynamic UI alerts that highlight low-stock items (Qty < 5) to prioritize donor contributions.
+- **Secure Authentication:** Password security powered by the **Scrypt** key derivation function.
+- **Responsive Architecture:** A "Mobile-First" interface engineered with Tailwind CSS for high-velocity on-site pantry management.
 
-## 🏁 Quick Start
-1. **Clone the repo:** `git clone https://github.com/yourusername/shelf-io.git`
-2. **Install dependencies:** `pip install flask flask-sqlalchemy flask-login`
-3. **Run the app:** `python app.py`
-4. **Log in:** Use `admin/123` for Volunteer access or `guest/123` for Donor access.
+## 🛠️ Tech Stack & Engineering Standards
+
+- **Backend:** Python 3.x / Flask
+- **Database:** SQLAlchemy ORM (Relational SQLite/PostgreSQL)
+- **Security:** - `python-dotenv` for Environment Variable isolation.
+  - `Werkzeug` security for advanced password hashing.
+  - Cross-Site Request Forgery (CSRF) protection via Flask-Login session management.
+- **Frontend:** HTML5, Tailwind CSS, Lucide Icons, Asynchronous JavaScript (Fetch API).
+
+
+
+## 🔐 System Permissions & Security Matrix
+
+| Action                 | Donor (Guest) | Volunteer (Admin) | Requirement          |
+|------------------------|:-------------:|:-----------------:|----------------------|
+| Register New Account   |      ✅       |      ✅           | Volunteer Code Valid |
+| Add New Inventory      |      ✅       |      ✅           | Authenticated        |
+| Increase Stock (+)     |      ✅       |      ✅           | Authenticated        |
+| Edit Item Details      |      ❌       |      ✅           | Volunteer Role       |
+| Decrease Stock (Take)  |      ❌       |      ✅           | Volunteer Role       |
+| Delete Record          |      ❌       |      ✅           | Volunteer Role       |
+| Access Activity Logs   |      ❌       |      ✅           | Volunteer Role       |
+
+## 🏁 Installation & Deployment
+
+### 1. Initialize Environment
+Clone the repository and set up your virtual environment:
+```bash
+git clone [https://github.com/yourusername/shelf-io.git](https://github.com/yourusername/shelf-io.git)
+cd shelf-io
+pip install -r requirements.txt
