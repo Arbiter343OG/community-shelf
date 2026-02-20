@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Shelf.io | Community Logistics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 overflow-x-hidden">
+
+    <nav class="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="bg-blue-600 p-2 rounded-lg text-white shadow-md">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xl font-extrabold tracking-tight italic">SHELF.IO</span>
+        </div>
+        <div class="flex gap-4">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('index') }}" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-lg">Back to Dashboard</a>
+            {% else %}
+                <a href="/login" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition">Login</a>
+                <a href="/register" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-100">Get Started</a>
+            {% endif %}
+        </div>       
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 pt-16 pb-24 text-center">
+        <div class="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-4 py-2 rounded-full mb-8">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+            </span>
+            <span class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Now Multi-Center Enabled</span>
+        </div>
+        
+        <h1 class="text-5xl md:text-7xl font-black text-slate-900 tracking-tight mb-6">
+            Logistics for <span class="text-blue-600">Community</span> Impact.
+        </h1>
+        <p class="max-w-2xl mx-auto text-slate-500 text-lg md:text-xl font-medium leading-relaxed mb-12">
+            The intelligent inventory engine for food pantries and community centers. Manage stock, track donations, and scale your impact across multiple locations.
+        </p>
+
+        <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+            <a href="/register" class="w-full md:w-auto bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-700 transition-all hover:scale-105 shadow-2xl shadow-blue-200 flex items-center justify-center gap-3">
+                <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                Register Your Center
+            </a>
+            <a href="/login" class="w-full md:w-auto bg-white border border-slate-200 text-slate-900 px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3">
+                Join as Volunteer
+                <i data-lucide="arrow-right" class="w-6 h-6"></i>
+            </a>
+        </div>
+    </main>
+
+    <section class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-200">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="space-y-4">
+                <div class="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tight">Multi-Tenant Isolation</h3>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">Each organization gets a private, secure database silo. Your data stays yours.</p>
+            </div>
+            <div class="space-y-4">
+                <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="activity"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tight">Real-Time Auditing</h3>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">Detailed activity logs track every item movement for complete transparency.</p>
+            </div>
+            <div class="space-y-4">
+                <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="smartphone"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tight">Mobile Optimized</h3>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">Engineered for volunteers on the move. Responsive, fast, and tactile UI.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 text-center border-t border-slate-100">
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Built for Global Community Impact • 2026</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
