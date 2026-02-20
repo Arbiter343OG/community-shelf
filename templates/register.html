@@ -35,50 +35,51 @@
             {% endwith %}
 
             <form action="/register" method="POST" class="space-y-4">
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Choose Your Role</label>
-                    <div class="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="role" value="donor" checked onclick="toggleVolunteerGate(false)" class="hidden peer">
-                            <div class="peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm py-3 rounded-xl text-center font-bold text-xs text-slate-500 transition-all">
-                                Donor
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="role" value="volunteer" onclick="toggleVolunteerGate(true)" class="hidden peer">
-                            <div class="peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm py-3 rounded-xl text-center font-bold text-xs text-slate-500 transition-all">
-                                Volunteer
-                            </div>
-                        </label>
-                    </div>
+                <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mb-6">
+                    <button type="button" onclick="toggleType('join')" id="btn-join" class="flex-1 py-2 rounded-xl text-xs font-black transition bg-white shadow-sm">JOIN CENTER</button>
+                    <button type="button" onclick="toggleType('create')" id="btn-create" class="flex-1 py-2 rounded-xl text-xs font-black transition text-slate-500">REGISTER NEW CENTER</button>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Username</label>
-                    <input type="text" name="username" placeholder="Pick a unique name" required 
-                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
-                </div>
+                <input type="hidden" name="reg_type" id="reg_type" value="join">
                 
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-                    <input type="password" name="password" placeholder="Create a strong password" required 
-                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
+                <input type="text" name="username" placeholder="Username" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" name="password" placeholder="Password" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
+
+                <div id="join-fields" class="space-y-4">
+                    <select name="role" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
+                        <option value="donor">I am a Donor</option>
+                        <option value="volunteer">I am a Volunteer</option>
+                    </select>
+                    <input type="text" name="access_code" placeholder="Enter Center Access Code" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-2 border-blue-100">
                 </div>
 
-                <div id="volunteer-gate" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label class="block text-[10px] font-black text-red-500 uppercase tracking-widest mb-2 ml-1">Volunteer Access Code</label>
-                    <div class="relative">
-                        <i data-lucide="lock" class="absolute left-4 top-4 w-4 h-4 text-red-400"></i>
-                        <input type="text" name="access_code" id="access_code_input" placeholder="Enter Center Code" 
-                               class="w-full pl-11 pr-4 py-4 bg-red-50 border border-red-100 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none font-bold text-red-700 placeholder:text-red-300">
-                    </div>
+                <div id="create-fields" class="hidden space-y-4">
+                    <input type="text" name="org_name" placeholder="Organization Name (e.g. SF Food Bank)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
+                    <input type="text" name="new_access_code" placeholder="Set Your Organization Access Code" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-2 border-green-100">
                 </div>
 
-                <button type="submit" class="w-full bg-slate-900 text-white font-extrabold py-4 rounded-2xl hover:bg-blue-600 transition-all shadow-lg mt-2 flex items-center justify-center gap-2">
-                    Sign Up
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                </button>
+                <button type="submit" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-blue-600 transition shadow-lg">Create Account</button>
             </form>
+
+            <script>
+                function toggleType(type) {
+                    document.getElementById('reg_type').value = type;
+                    const joinF = document.getElementById('join-fields');
+                    const createF = document.getElementById('create-fields');
+                    const btnJ = document.getElementById('btn-join');
+                    const btnC = document.getElementById('btn-create');
+
+                    if (type === 'join') {
+                        joinF.classList.remove('hidden'); createF.classList.add('hidden');
+                        btnJ.className = "flex-1 py-2 rounded-xl text-xs font-black transition bg-white shadow-sm";
+                        btnC.className = "flex-1 py-2 rounded-xl text-xs font-black transition text-slate-400";
+                    } else {
+                        createF.classList.remove('hidden'); joinF.classList.add('hidden');
+                        btnC.className = "flex-1 py-2 rounded-xl text-xs font-black transition bg-white shadow-sm text-green-600";
+                        btnJ.className = "flex-1 py-2 rounded-xl text-xs font-black transition text-slate-400";
+                    }
+                }
+            </script>
             
             <p class="text-center mt-6 text-sm text-slate-500 font-medium">
                 Already have an account? <a href="/login" class="text-blue-600 font-bold hover:underline">Log In</a>
