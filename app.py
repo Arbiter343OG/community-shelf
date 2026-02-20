@@ -21,14 +21,27 @@ db = SQLAlchemy(app)
 # --- LOGIN SETUP ---
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+# Change this from 'login' to 'welcome'
+login_manager.login_view = 'welcome'
+
+
+
 
 # --- MODELS ---
+class Organization(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    org_access_code = db.Column(db.String(50), nullable=False) 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), nullable=False) # 'volunteer' or 'donor'
+    role = db.Column(db.String(20), nullable=False) 
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)
+    
+    # NEW: This allows us to call 'current_user.organization.name'
+    organization = db.relationship('Organization', backref='members')
 
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,6 +49,7 @@ class Item(db.Model):
     category = db.Column(db.String(50), default="General 📦")
     quantity = db.Column(db.Integer, default=1)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +58,7 @@ class ActivityLog(db.Model):
     item_name = db.Column(db.String(100))
     action = db.Column(db.String(50))  # "Added", "Quantity Change", "Deleted"
     change = db.Column(db.String(20))   # "+1", "-1", "NEW"
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -76,23 +91,45 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         role = request.form.get('role')
-        access_code = request.form.get('access_code')
+        reg_type = request.form.get('reg_type') # 'join' or 'create'
 
+        # 1. Basic Check
         if User.query.filter_by(username=username).first():
-            flash('Username already taken. Try another!')
+            flash('Username taken.')
             return redirect(url_for('register'))
 
-        if role == 'volunteer':
-            if access_code != app.config['VOLUNTEER_ACCESS_CODE']:
-                flash('Incorrect Volunteer Access Code.')
-                return redirect(url_for('register'))
+        # 2. Logic: Create New Organization
+        if reg_type == 'create':
+            org_name = request.form.get('org_name')
+            new_access_code = request.form.get('new_access_code')
+            
+            # Create the Org first
+            new_org = Organization(name=org_name, org_access_code=new_access_code)
+            db.session.add(new_org)
+            db.session.commit() # Commit to get the new_org.id
+            
+            target_org_id = new_org.id
+            user_role = 'volunteer' # Founder is automatically a volunteer
 
+        # 3. Logic: Join Existing Organization
+        else:
+            access_code = request.form.get('access_code')
+            org = Organization.query.filter_by(org_access_code=access_code).first()
+            
+            if not org:
+                flash('Invalid Organization Access Code.')
+                return redirect(url_for('register'))
+            
+            target_org_id = org.id
+            user_role = role
+
+        # 4. Create User
         hashed_pw = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_pw, role=role)
+        new_user = User(username=username, password=hashed_pw, role=user_role, org_id=target_org_id)
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Account created! You can now log in.')
+        flash(f'Success! Welcome to {Organization.query.get(target_org_id).name}')
         return redirect(url_for('login'))
 
     return render_template('register.html')
@@ -100,26 +137,37 @@ def register():
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('welcome')) # Redirects to Landing Page after logout
 
 @app.route('/')
 @login_required
 def index():
     search_query = request.args.get('q', '')
+    # Filter everything by org_id immediately
+    base_query = Item.query.filter_by(org_id=current_user.org_id)
+    
     if search_query:
-        items = Item.query.filter((Item.name.contains(search_query)) | (Item.category.contains(search_query))).all()
+        items = base_query.filter((Item.name.contains(search_query)) | (Item.category.contains(search_query))).all()
     else:
-        items = Item.query.order_by(Item.date_added.desc()).all()
+        items = base_query.order_by(Item.date_added.desc()).all()
+    
     logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
     return render_template('index.html', items=items, search_query=search_query, user=current_user, logs=logs)
 
+@app.route('/welcome')
+def welcome():
+    # We remove the "if current_user.is_authenticated: redirect" block 
+    # so users can see the landing page even while logged in.
+    return render_template('welcome.html', user=current_user)
 
 @app.route('/add', methods=['POST'])
 @login_required
 def add_item():
     name = request.form.get('name')
     category = request.form.get('category')
-    db.session.add(Item(name=name, category=category))
+    # Assign the item to the user's organization!
+    new_item = Item(name=name, category=category, org_id=current_user.org_id)
+    db.session.add(new_item)
     db.session.commit()
     return redirect(url_for('index'))
 
