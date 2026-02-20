@@ -3,10 +3,19 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
+from dotenv import load_dotenv
+
+# 1. Load Environment Variables
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shelf.db'
-app.config['SECRET_KEY'] = 'dev-secret-key-123' 
+
+# 2. Configure App from .env
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-123')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///shelf.db')
+app.config['VOLUNTEER_ACCESS_CODE'] = os.getenv('VOLUNTEER_ACCESS_CODE', 'JOIN-SHELF-2026')
+
 db = SQLAlchemy(app)
 
 # --- LOGIN SETUP ---
@@ -14,6 +23,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# --- MODELS ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -35,10 +45,9 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username='admin').first():
-        # Volunteer Account
-        db.session.add(User(username='admin', password=generate_password_hash('123'), role='volunteer'))
-        # Donor Account
-        db.session.add(User(username='guest', password=generate_password_hash('123'), role='donor'))
+        # High-performer note: use scrypt for consistency across the whole app
+        db.session.add(User(username='admin', password=generate_password_hash('123', method='scrypt'), role='volunteer'))
+        db.session.add(User(username='guest', password=generate_password_hash('123', method='scrypt'), role='donor'))
         db.session.commit()
 
 # --- ROUTES ---
@@ -52,9 +61,33 @@ def login():
             return redirect(url_for('index'))
         flash('Login Failed. Check your credentials.')
     return render_template('login.html')
-# Add this to your config
-app.config['VOLUNTEER_ACCESS_CODE'] = 'SHELF-2026-PRO' # In production, use .env
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        access_code = request.form.get('access_code')
+
+        if User.query.filter_by(username=username).first():
+            flash('Username already taken. Try another!')
+            return redirect(url_for('register'))
+
+        if role == 'volunteer':
+            if access_code != app.config['VOLUNTEER_ACCESS_CODE']:
+                flash('Incorrect Volunteer Access Code.')
+                return redirect(url_for('register'))
+
+        hashed_pw = generate_password_hash(password, method='scrypt')
+        new_user = User(username=username, password=hashed_pw, role=role)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Account created! You can now log in.')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():
@@ -74,7 +107,6 @@ def index():
 @app.route('/add', methods=['POST'])
 @login_required
 def add_item():
-    # Anyone logged in can add a new donation card
     name = request.form.get('name')
     category = request.form.get('category')
     db.session.add(Item(name=name, category=category))
@@ -85,9 +117,6 @@ def add_item():
 @login_required
 def update(id, action):
     item = Item.query.get_or_404(id)
-    
-    # SECURITY LOGIC
-    # If a donor tries to 'decrease' (take), block them.
     if current_user.role == 'donor' and action == 'decrease':
         return jsonify({'error': 'Donors cannot remove stock'}), 403
     
@@ -102,7 +131,6 @@ def update(id, action):
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_item(id):
-    # Strictly for volunteers
     if current_user.role != 'volunteer':
         return jsonify({'error': 'Unauthorized'}), 403
     item = Item.query.get_or_404(id)
@@ -114,47 +142,14 @@ def delete_item(id):
 @login_required
 def edit_item(id):
     item = Item.query.get_or_404(id)
+    # Security: Ensure only volunteers or the "owner" (if you add that later) can edit
+    if current_user.role != 'volunteer':
+         return redirect(url_for('index'))
+         
     item.name = request.form.get('name')
     item.category = request.form.get('category')
     db.session.commit()
     return redirect(url_for('index'))
-    
-# --- CONFIG ---
-app.config['SECRET_KEY'] = 'dev-secret-key-123' 
-app.config['VOLUNTEER_ACCESS_CODE'] = 'JOIN-SHELF-2026' # The "Special Code" from the center
-
-# --- NEW REGISTRATION ROUTE ---
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        role = request.form.get('role')
-        access_code = request.form.get('access_code')
-
-        # 1. Check if user already exists
-        if User.query.filter_by(username=username).first():
-            flash('Username already taken. Try another!')
-            return redirect(url_for('register'))
-
-        # 2. Volunteer Gate Logic
-        if role == 'volunteer':
-            if access_code != app.config['VOLUNTEER_ACCESS_CODE']:
-                flash('Incorrect Volunteer Access Code. Please contact the center.')
-                return redirect(url_for('register'))
-
-        # 3. Hash password and save
-        hashed_pw = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_pw, role=role)
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('Account created! You can now log in.')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')    
 
 if __name__ == "__main__":
-
     app.run(debug=True)
-
