@@ -62,6 +62,32 @@
                 </div>
                 <i data-lucide="package" class="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 rotate-12"></i>
             </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-6">
+                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-3 h-3 text-blue-500"></i> Recent Activity
+                </h2>
+                <div class="space-y-4 max-h-[300px] overflow-y-auto no-scrollbar">
+                    {% for log in logs %}
+                    <div class="flex gap-3 items-start border-l-2 border-slate-100 pl-4 py-1">
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-slate-800">
+                                <span class="text-blue-600">{{ log.username }}</span> 
+                                {{ "added" if log.change == "+1" else "took" }} 
+                                {{ log.item_name }}
+                            </p>
+                            <p class="text-[9px] font-medium text-slate-400 mt-0.5">
+                                {{ log.timestamp.strftime('%I:%M %p') }} • 
+                                <span class="{{ 'text-green-500' if log.change == '+1' else 'text-red-500' }} font-black">
+                                    {{ log.change }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-[10px] text-slate-400 italic text-center py-4">No recent activity</p>
+                    {% endfor %}
+                </div>
+            </div>            
         </aside>
 
         <main class="lg:col-span-8">
