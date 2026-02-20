@@ -121,7 +121,7 @@ def edit_item(id):
     
 # --- CONFIG ---
 app.config['SECRET_KEY'] = 'dev-secret-key-123' 
-app.config['VOLUNTEER_CODE'] = 'JOIN-SHELF-2026' # The "Special Code" from the center
+app.config['VOLUNTEER_ACCESS_CODE'] = 'JOIN-SHELF-2026' # The "Special Code" from the center
 
 # --- NEW REGISTRATION ROUTE ---
 @app.route('/register', methods=['GET', 'POST'])
@@ -139,7 +139,7 @@ def register():
 
         # 2. Volunteer Gate Logic
         if role == 'volunteer':
-            if access_code != app.config['VOLUNTEER_CODE']:
+            if access_code != app.config['VOLUNTEER_ACCESS_CODE']:
                 flash('Incorrect Volunteer Access Code. Please contact the center.')
                 return redirect(url_for('register'))
 
@@ -157,5 +157,4 @@ def register():
 if __name__ == "__main__":
 
     app.run(debug=True)
-
 
