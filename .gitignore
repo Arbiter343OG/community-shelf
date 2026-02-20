@@ -208,3 +208,6 @@ __marimo__/
 
 # Custom Database ignore
 shelf.db
+.env
+__pycache__/
+*.db
