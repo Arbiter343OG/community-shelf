@@ -37,6 +37,14 @@ class Item(db.Model):
     quantity = db.Column(db.Integer, default=1)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
+class ActivityLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    username = db.Column(db.String(50))
+    item_name = db.Column(db.String(100))
+    action = db.Column(db.String(50))  # "Added", "Quantity Change", "Deleted"
+    change = db.Column(db.String(20))   # "+1", "-1", "NEW"
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -102,7 +110,9 @@ def index():
         items = Item.query.filter((Item.name.contains(search_query)) | (Item.category.contains(search_query))).all()
     else:
         items = Item.query.order_by(Item.date_added.desc()).all()
-    return render_template('index.html', items=items, search_query=search_query, user=current_user)
+    logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    return render_template('index.html', items=items, search_query=search_query, user=current_user, logs=logs)
+
 
 @app.route('/add', methods=['POST'])
 @login_required
@@ -124,7 +134,15 @@ def update(id, action):
         item.quantity += 1
     elif action == 'decrease' and item.quantity > 0:
         item.quantity -= 1
-        
+    # NEW: Logging Logic
+    change_text = "+1" if action == 'increase' else "-1"
+    new_log = ActivityLog(
+        username=current_user.username,
+        item_name=item.name,
+        action="Updated Qty",
+        change=change_text
+    )
+    db.session.add(new_log)    
     db.session.commit()
     return jsonify({'new_qty': item.quantity})
 
