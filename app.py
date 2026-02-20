@@ -52,7 +52,42 @@ def login():
             return redirect(url_for('index'))
         flash('Login Failed. Check your credentials.')
     return render_template('login.html')
+# Add this to your config
+app.config['VOLUNTEER_ACCESS_CODE'] = 'SHELF-2026-PRO' # In production, use .env
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        access_code = request.form.get('access_code')
+
+        # Check if user exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.')
+            return redirect(url_for('register'))
+
+        # Volunteer Validation Gate
+        if role == 'volunteer':
+            if access_code != app.config['VOLUNTEER_ACCESS_CODE']:
+                flash('Invalid Volunteer Access Code!')
+                return redirect(url_for('register'))
+        
+        # Create User
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password, method='pbkdf2:sha256'),
+            role=role
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('Registration successful! Please login.')
+        return redirect(url_for('login'))
+        
+    return render_template('register.html')
+    
 @app.route('/logout')
 def logout():
     logout_user()
@@ -117,4 +152,5 @@ def edit_item(id):
     return redirect(url_for('index'))
 
 if __name__ == "__main__":
+
     app.run(debug=True)
