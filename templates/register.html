@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Shelf.io | Community Impact</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] flex items-center justify-center min-h-screen p-6">
+
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200">
+                <i data-lucide="user-plus" class="text-white w-8 h-8"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Create Account</h1>
+            <p class="text-slate-500 font-medium mt-2">Join the Shelf.io network</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200">
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="bg-amber-50 text-amber-600 p-4 rounded-2xl mb-6 text-sm font-bold flex items-center gap-2 border border-amber-100">
+                      <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                      {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="/register" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Choose Your Role</label>
+                    <div class="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="role" value="donor" checked onclick="toggleVolunteerGate(false)" class="hidden peer">
+                            <div class="peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm py-3 rounded-xl text-center font-bold text-xs text-slate-500 transition-all">
+                                Donor
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="role" value="volunteer" onclick="toggleVolunteerGate(true)" class="hidden peer">
+                            <div class="peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm py-3 rounded-xl text-center font-bold text-xs text-slate-500 transition-all">
+                                Volunteer
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Username</label>
+                    <input type="text" name="username" placeholder="Pick a unique name" required 
+                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                    <input type="password" name="password" placeholder="Create a strong password" required 
+                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold transition-all">
+                </div>
+
+                <div id="volunteer-gate" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label class="block text-[10px] font-black text-red-500 uppercase tracking-widest mb-2 ml-1">Volunteer Access Code</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-4 top-4 w-4 h-4 text-red-400"></i>
+                        <input type="text" name="access_code" id="access_code_input" placeholder="Enter Center Code" 
+                               class="w-full pl-11 pr-4 py-4 bg-red-50 border border-red-100 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none font-bold text-red-700 placeholder:text-red-300">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 text-white font-extrabold py-4 rounded-2xl hover:bg-blue-600 transition-all shadow-lg mt-2 flex items-center justify-center gap-2">
+                    Sign Up
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </button>
+            </form>
+            
+            <p class="text-center mt-6 text-sm text-slate-500 font-medium">
+                Already have an account? <a href="/login" class="text-blue-600 font-bold hover:underline">Log In</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleVolunteerGate(show) {
+            const gate = document.getElementById('volunteer-gate');
+            const input = document.getElementById('access_code_input');
+            if (show) {
+                gate.classList.remove('hidden');
+                input.setAttribute('required', 'required');
+            } else {
+                gate.classList.add('hidden');
+                input.removeAttribute('required');
+                input.value = ''; // Clear it if they switch back to donor
+            }
+        }
+    </script>
+</body>
+</html>
