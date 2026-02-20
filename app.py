@@ -150,7 +150,43 @@ def edit_item(id):
     item.category = request.form.get('category')
     db.session.commit()
     return redirect(url_for('index'))
+    
+# --- CONFIG ---
+app.config['SECRET_KEY'] = 'dev-secret-key-123' 
+app.config['VOLUNTEER_CODE'] = 'JOIN-SHELF-2026' # The "Special Code" from the center
+
+# --- NEW REGISTRATION ROUTE ---
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        access_code = request.form.get('access_code')
+
+        # 1. Check if user already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already taken. Try another!')
+            return redirect(url_for('register'))
+
+        # 2. Volunteer Gate Logic
+        if role == 'volunteer':
+            if access_code != app.config['VOLUNTEER_CODE']:
+                flash('Incorrect Volunteer Access Code. Please contact the center.')
+                return redirect(url_for('register'))
+
+        # 3. Hash password and save
+        hashed_pw = generate_password_hash(password, method='scrypt')
+        new_user = User(username=username, password=hashed_pw, role=role)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Account created! You can now log in.')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')    
 
 if __name__ == "__main__":
 
     app.run(debug=True)
+
