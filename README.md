@@ -1,50 +1,30 @@
-# 🍎 Shelf.io | Multi-Tenant Community Logistics Platform
+# Shelf.io | Community Resource Management
 
-Shelf.io is a scalable, secure, and production-ready inventory management engine designed for decentralized community support. Unlike single-instance trackers, Shelf.io utilizes a **Multi-Tenant Architecture**, allowing multiple independent organizations to manage their own private resource silos within a unified infrastructure.
+A high-performance, real-time logistics and team management portal designed for community shelves and food banks. Built with a focus on administrative transparency and seamless volunteer onboarding.
 
----
+## 🚀 Key Features (Cycle 2 Complete)
 
-## 🏗️ Architectural Evolution
-The project has evolved from a simple inventory tool into a **SaaS-ready logistics platform**. By implementing foreign-key isolation, we ensure that data from one community center is cryptographically and logically separated from others.
+* **Live Audit Trail:** Real-time transaction logging with an encrypted ledger feel, tracking every item addition and removal with timestamps.
+* **Dynamic Team Management:** Founder-level controls to authorize volunteers or revoke access instantly via an asynchronous administrative API.
+* **Edit-in-Place Mission Statement:** A premium UX feature allowing Founders to update the organization's mission statement directly from the hero section without page reloads.
+* **Role-Based Access Control (RBAC):** Distinct permission tiers for Founders (Full Control), Volunteers (Write Access), and Donors (Read-Only).
+* **Onboarding System:** Secure, organization-specific access codes for rapid volunteer deployment.
 
+## 🛠️ Tech Stack
 
+* **Backend:** Flask (Python)
+* **Database:** SQLAlchemy (SQLite)
+* **Frontend:** Tailwind CSS, Jinja2 Templates
+* **Icons:** Lucide-JS
+* **Authentication:** Flask-Login
 
-## 🚀 Key Platform Features
+## 📂 Project Structure
 
-- **Multi-Tenant Isolation:** Dynamic organization registration creates private data environments for each community center.
-- **Role-Based Access Control (RBAC):** Tiered permissions for 'Donors' and 'Volunteers' within specific organizational boundaries.
-- **Dynamic Logistics Dashboard:** Real-time inventory heuristics including total impact tracking and automated "Low Stock" alerts.
-- **Cryptographic Security:** User authentication powered by the **Scrypt** key derivation function for industry-standard password hashing.
-- **Audit Provenance:** A robust `ActivityLog` system that records every transaction, providing a transparent audit trail for resource movement.
-
-## 🛠️ Engineering Stack
-
-- **Backend:** Python 3.x / Flask
-- **ORM:** SQLAlchemy (Relational mapping with foreign-key constraints)
-- **Security:** - `python-dotenv` for secret management.
-  - `Werkzeug` for secure hashing.
-  - Session-based authentication via `Flask-Login`.
-- **UI/UX:** Tailwind CSS, Lucide Icons, and Mobile-First responsive design.
-
-## 🔐 System Logic & Permissions
-
-| Feature                | Donor         | Volunteer     | Org Admin      |
-|------------------------|:-------------:|:-------------:|:--------------:|
-| Register New Center    |      ✅       |      ✅       |      ✅        |
-| Add Items              |      ✅       |      ✅       |      ✅        |
-| Increase Stock         |      ✅       |      ✅       |      ✅        |
-| Decrease Stock (Take)  |      ❌       |      ✅       |      ✅        |
-| View Activity Logs     |      ❌       |      ✅       |      ✅        |
-| Delete Item Records    |      ❌       |      ✅       |      ✅        |
-
-## 🚦 Getting Started
-
-### 1. Prerequisites
-- Python 3.10+
-- Virtual Environment (`venv`)
-
-### 2. Installation
-```bash
-git clone [https://github.com/yourusername/shelf-io.git](https://github.com/yourusername/shelf-io.git)
-cd shelf-io
-pip install -r requirements.txt
+```text
+├── app.py              # Central logic and API endpoints
+├── models.py           # Database schema (User, Org, Logs, Items)
+├── templates/
+│   ├── index.html      # Main Shelf Dashboard
+│   ├── team.html       # Team Management & Audit Portal
+│   └── login.html      # Secure Gateway
+└── static/             # Assets and custom JS
