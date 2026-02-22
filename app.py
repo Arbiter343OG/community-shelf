@@ -5,6 +5,11 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
+import csv
+from io import StringIO
+from flask import make_response
+
+
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -31,7 +36,9 @@ login_manager.login_view = 'welcome'
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    org_access_code = db.Column(db.String(50), nullable=False) 
+    org_access_code = db.Column(db.String(50), nullable=False)
+    # NEW: Branding field
+    description = db.Column(db.String(255), default="Supporting our local community.")
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,9 +63,10 @@ class ActivityLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     username = db.Column(db.String(50))
     item_name = db.Column(db.String(100))
-    action = db.Column(db.String(50))  # "Added", "Quantity Change", "Deleted"
-    change = db.Column(db.String(20))   # "+1", "-1", "NEW"
-
+    action = db.Column(db.String(50)) 
+    change = db.Column(db.String(20))
+    # NEW: Link log to the organization
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -109,7 +117,7 @@ def register():
             db.session.commit() # Commit to get the new_org.id
             
             target_org_id = new_org.id
-            user_role = 'volunteer' # Founder is automatically a volunteer
+            user_role = 'founder' # Founder is automatically a volunteer
 
         # 3. Logic: Join Existing Organization
         else:
@@ -168,6 +176,15 @@ def add_item():
     # Assign the item to the user's organization!
     new_item = Item(name=name, category=category, org_id=current_user.org_id)
     db.session.add(new_item)
+
+    log = ActivityLog(
+        username=current_user.username,
+        item_name=name,
+        action="Added Item",
+        change="+1",
+        org_id=current_user.org_id
+    )
+    db.session.add(log)
     db.session.commit()
     return redirect(url_for('index'))
 
@@ -188,7 +205,8 @@ def update(id, action):
         username=current_user.username,
         item_name=item.name,
         action="Updated Qty",
-        change=change_text
+        change=change_text,
+        org_id=current_user.org_id # CRITICAL: Tie it to the org
     )
     db.session.add(new_log)    
     db.session.commit()
@@ -201,6 +219,14 @@ def delete_item(id):
         return jsonify({'error': 'Unauthorized'}), 403
     item = Item.query.get_or_404(id)
     db.session.delete(item)
+    log = ActivityLog(
+        username=current_user.username,
+        item_name=item.name,
+        action="Deleted Item",
+        change="-1",
+        org_id=current_user.org_id
+    )
+    db.session.add(log)
     db.session.commit()
     return jsonify({'success': True})
 
@@ -216,6 +242,85 @@ def edit_item(id):
     item.category = request.form.get('category')
     db.session.commit()
     return redirect(url_for('index'))
+
+
+
+@app.route('/export')
+@login_required
+def export_csv():
+    # Only allow Volunteers to export
+    if current_user.role not in ['volunteer', 'founder']:
+        return "Unauthorized", 403
+
+    items = Item.query.filter_by(org_id=current_user.org_id).all()
+    
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Item Name', 'Category', 'Quantity', 'Date Added'])
+    
+    for item in items:
+        cw.writerow([item.name, item.category, item.quantity, item.date_added])
+    
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=inventory_report.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+@app.route('/team')
+@login_required
+def team_management():
+    # 1. Security Check: Only Volunteers (Admins) should access this
+    if current_user.role not in ['volunteer', 'founder']:
+        flash("Access Denied: You do not have administrative privileges.")
+        return redirect(url_for('index'))
+
+    # 2. Fetch all users belonging to the current user's organization
+    all_members = User.query.filter_by(org_id=current_user.org_id).all()
+    
+    # 3. Categorize users using list comprehensions
+    # Group founders and volunteers together as the "Staff"
+    volunteers = [user for user in all_members if user.role in ['volunteer', 'founder']]
+    donors = [user for user in all_members if user.role == 'donor']
+    
+    # 4. Fetch the 20 most recent logs specifically for this organization
+    logs = ActivityLog.query.filter_by(org_id=current_user.org_id)\
+                        .order_by(ActivityLog.timestamp.desc())\
+                        .limit(10).all()
+
+    return render_template('team.html', 
+                           volunteers=volunteers, 
+                           donors=donors, 
+                           logs=logs)
+
+@app.route('/remove_member/<int:user_id>', methods=['POST'])
+@login_required
+def remove_member(user_id):
+    if current_user.role.lower() != 'founder':
+        return jsonify({'error': 'Only the Founder can remove members'}), 403
+    
+    user_to_remove = User.query.get_or_404(user_id)
+    
+    # Ensure they are in the same org and you aren't deleting yourself
+    if user_to_remove.org_id == current_user.org_id and user_to_remove.id != current_user.id:
+        db.session.delete(user_to_remove)
+        db.session.commit()
+        return jsonify({'success': True})
+    
+    return jsonify({'error': 'Invalid request'}), 400
+
+@app.route('/update_mission', methods=['POST'])
+@login_required
+def update_mission():
+    if current_user.role.lower() != 'founder':
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.get_json()
+    new_description = data.get('description')
+    
+    current_user.organization.description = new_description
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 if __name__ == "__main__":
     app.run(debug=True)
