@@ -95,23 +95,36 @@
                 </h2>
                 <form action="/add" method="POST" class="space-y-4">
                     <input type="text" name="name" placeholder="Item Name" required class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
-                    <select name="category" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
-                        <option value="Produce 🍎">Produce 🍎</option>
-                        <option value="Dairy 🥛">Dairy 🥛</option>
-                        <option value="Bakery 🍞">Bakery 🍞</option>
-                        <option value="Canned 🥫">Canned 🥫</option>
-                        <option value="General 📦">General 📦</option>
-                    </select>
+                        <select name="category" id="categorySelect" onchange="updateUnits()" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                            <option value="Produce">Produce 🍎</option>
+                            <option value="Dairy">Dairy 🥛</option>
+                            <option value="Bakery">Bakery 🍞</option>
+                            <option value="Canned">Canned 🥫</option>
+                            <option value="General 📦">General 📦</option>
+                        </select>                    
+                    
+                        <div class="relative">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Unit of Measure</label>
+                            <select name="unit" id="unitSelect" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium appearance-none">
+                            </select>
+                        </div>
+                    <input type="hidden" name="threshold" value="5">
+                    
                     <button type="submit" class="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
                         <i data-lucide="plus-circle" class="w-5 h-5"></i> Add to Shelf
                     </button>
                 </form>
                 {% if current_user.role in ['volunteer', 'founder'] %}
-                <a href="{{ url_for('export_csv') }}" class="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-slate-100 text-slate-500 rounded-2xl text-xs font-black hover:bg-slate-50 hover:border-slate-200 transition">
-                    <i data-lucide="download" class="w-5 h-5"></i> 
-                    <span class="tracking-widest uppercase">Export Report (.CSV)</span>
-                </a>
-                {% endif %}                
+                <div class="mt-4">
+                    <a href="{{ url_for('export_audit_xlsx') }}" 
+                    class="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-slate-100 text-slate-500 rounded-2xl text-xs font-black hover:bg-slate-50 hover:border-blue-200 hover:text-blue-600 transition group">
+                        <div class="p-1.5 bg-slate-50 group-hover:bg-blue-50 rounded-lg transition">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-slate-400 group-hover:text-blue-600"></i>
+                        </div>
+                        <span class="tracking-widest uppercase">Export Intel (.XLSX)</span>
+                    </a>
+                </div>
+                {% endif %}               
             </div>
             
             <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden">
@@ -185,16 +198,18 @@
                         
                         <div class="flex flex-col items-end gap-2">
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}')" class="text-slate-400 hover:text-blue-500 p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}', '{{ item.low_threshold }}')" class="text-slate-400 hover:text-blue-500 p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
                                 
-                                {% if user.role == 'volunteer' %}
+                                {% if user.role in ['volunteer', 'founder'] %}
                                 <button onclick="deleteItem({{ item.id }})" class="text-slate-400 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 {% endif %}
                             </div>
 
                             <div id="badge-container-{{ item.id }}">
-                                {% if item.quantity <= 5 %}
-                                <div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100">LOW</div>
+                                {% if item.quantity <= item.low_threshold %}
+                                <div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100 uppercase italic">
+                                    Low Stock (< {{ item.low_threshold + 1 }})
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -203,17 +218,20 @@
                     <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
                         
                         {% if user.role in ['volunteer', 'founder'] %}
-                        <button onclick="updateQty({{ item.id }}, 'decrease')" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-red-500 font-black hover:bg-red-50 active:scale-90 transition">Take</button>
+                        <button onclick="updateQty({{ item.id }}, 'decrease', {{ item.low_threshold }})" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-red-500 font-black hover:bg-red-50 active:scale-90 transition">Take</button>
                         {% else %}
                         <div class="w-12 h-12 flex items-center justify-center text-slate-300 italic text-[10px] font-bold text-center leading-tight">Admin Only</div>
                         {% endif %}
                         
-                        <div class="text-center">
-                            <span id="qty-{{ item.id }}" class="text-3xl font-black block">{{ item.quantity }}</span>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">In Stock</span>
-                        </div>
+                            <div class="text-center">
+                                <div class="flex items-baseline justify-center gap-1">
+                                    <span id="qty-{{ item.id }}" class="text-3xl font-black block">{{ item.quantity }}</span>
+                                    <span class="text-sm font-bold text-slate-500">{{ item.unit }}</span>
+                                </div>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">In Stock</span>
+                            </div>                        
 
-                        <button onclick="updateQty({{ item.id }}, 'increase')" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-green-500 font-black hover:bg-green-50 active:scale-90 transition">+</button>
+                        <button onclick="updateQty({{ item.id }}, 'increase', {{ item.low_threshold }})" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-green-500 font-black hover:bg-green-50 active:scale-90 transition">+</button>
                     </div>
                 </div>
                 {% endfor %}
@@ -224,19 +242,35 @@
 
     <div id="editModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl scale-95 transition-all">
-            <h2 class="text-2xl font-black text-slate-800 mb-6">Edit Item</h2>
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Manage Item</h2>
             <form id="editForm" method="POST" class="space-y-4">
-                <input type="text" name="name" id="editName" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
-                <select name="category" id="editCategory" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none">
-                    <option value="Produce 🍎">Produce 🍎</option>
-                    <option value="Dairy 🥛">Dairy 🥛</option>
-                    <option value="Bakery 🍞">Bakery 🍞</option>
-                    <option value="Canned 🥫">Canned 🥫</option>
-                    <option value="General 📦">General 📦</option>
-                </select>
-                <div class="flex gap-3 pt-2">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Item Name</label>
+                    <input type="text" name="name" id="editName" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Category</label>
+                    <select name="category" id="editCategory" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none">
+                        <option value="Produce 🍎">Produce 🍎</option>
+                        <option value="Dairy 🥛">Dairy 🥛</option>
+                        <option value="Bakery 🍞">Bakery 🍞</option>
+                        <option value="Canned 🥫">Canned 🥫</option>
+                        <option value="General 📦">General 📦</option>
+                    </select>
+                </div>
+                
+                {% if user.role in ['volunteer', 'founder'] %}
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Low Stock Alert Threshold</label>
+                    <input type="number" name="threshold" id="editThreshold" min="0" required class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                {% else %}
+                <input type="hidden" name="threshold" id="editThreshold">
+                {% endif %}
+
+                <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl">Cancel</button>
-                    <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition">Save</button>
+                    <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -244,72 +278,122 @@
 
     <script>
         lucide.createIcons();
-        async function updateQty(id, action) {
+        
+        const categoryUnitMap = {
+            "Produce": ["kg", "g", "pcs", "Bundles", "Sacks"],
+            "Dairy": ["L", "ml", "pcs", "kg", "Cartons"],
+            "Canned": ["Cans", "Units", "Cases"],
+            "Bakery": ["pcs", "Loaves", "Dozens", "Boxes"],
+            "General 📦": ["units", "pcs", "kg", "L", "Boxes"]
+        };
+
+        function updateUnits() {
+            const categorySelect = document.getElementById('categorySelect');
+            const unitSelect = document.getElementById('unitSelect');
+            const selectedCategory = categorySelect.value;
+            
+            // Clear current options
+            unitSelect.innerHTML = '';
+            
+            // Get units for the selected category
+            const units = categoryUnitMap[selectedCategory] || categoryUnitMap["General 📦"];
+            
+            // Populate new options
+            units.forEach(unit => {
+                let option = document.createElement('option');
+                option.value = unit;
+                option.text = unit;
+                unitSelect.appendChild(option);
+            });
+        }        
+        
+        async function updateQty(id, action, threshold) {
             const res = await fetch(`/update/${id}/${action}`, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 const span = document.getElementById(`qty-${id}`);
                 const b = document.getElementById(`badge-container-${id}`);
+                
                 span.innerText = data.new_qty;
-                if (data.new_qty <= 5) {
-                    b.innerHTML = `<div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100">LOW</div>`;
-                } else { b.innerHTML = ''; }
+                
+                // Use dynamic threshold for the UI update
+                if (data.new_qty <= threshold) {
+                    b.innerHTML = `<div class="bg-red-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black animate-pulse border border-red-100 uppercase italic">Low Stock (< ${threshold + 1})</div>`;
+                } else { 
+                    b.innerHTML = ''; 
+                }
+                
                 span.classList.add('scale-125', action === 'increase' ? 'text-green-600' : 'text-red-600');
                 setTimeout(() => span.classList.remove('scale-125', 'text-green-600', 'text-red-600'), 200);
             } else {
-                alert("You don't have permission to take items!");
+                alert("Action not permitted!");
             }
         }
+
         async function deleteItem(id) {
-            if (!confirm("Are you sure?")) return;
+            if (!confirm("Remove this item permanently?")) return;
             const res = await fetch(`/delete/${id}`, { method: 'POST' });
-            if (res.ok) { document.getElementById(`card-${id}`).remove(); location.reload(); }
+            if (res.ok) { 
+                document.getElementById(`card-${id}`).classList.add('opacity-0', 'scale-90');
+                setTimeout(() => {
+                    document.getElementById(`card-${id}`).remove();
+                    if(document.querySelectorAll('[id^="card-"]').length === 0) location.reload();
+                }, 300);
+            }
         }
-        function openEditModal(id, name, cat) {
+
+        function openEditModal(id, name, cat, threshold) {
             document.getElementById('editForm').action = `/edit/${id}`;
             document.getElementById('editName').value = name;
             document.getElementById('editCategory').value = cat;
+            document.getElementById('editThreshold').value = threshold;
             document.getElementById('editModal').classList.remove('hidden');
         }
+
         function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
         
         function editMission() {
-        document.getElementById('mission-text').classList.add('hidden');
-        const input = document.getElementById('mission-input');
-        input.classList.remove('hidden');
-        input.focus();
-    }
-
-    async function saveMission() {
-        const text = document.getElementById('mission-text');
-        const input = document.getElementById('mission-input');
-        const newMission = input.value;
-
-        if (newMission === text.innerText.replace(/"/g, '')) {
-            hideInput();
-            return;
+            document.getElementById('mission-text').classList.add('hidden');
+            const input = document.getElementById('mission-input');
+            input.classList.remove('hidden');
+            input.focus();
         }
 
-        try {
-            const response = await fetch('/update_mission', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description: newMission })
-            });
+        async function saveMission() {
+            const text = document.getElementById('mission-text');
+            const input = document.getElementById('mission-input');
+            const newMission = input.value;
 
-            if (response.ok) {
-                text.innerText = `"${newMission}"`;
+            if (newMission === text.innerText.replace(/"/g, '')) {
                 hideInput();
+                return;
             }
-        } catch (err) {
-            alert("Failed to update mission statement.");
-        }
-    }
 
-    function hideInput() {
-        document.getElementById('mission-text').classList.remove('hidden');
-        document.getElementById('mission-input').classList.add('hidden');
-    }
+            try {
+                const response = await fetch('/update_mission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: newMission })
+                });
+
+                if (response.ok) {
+                    text.innerHTML = `"${newMission}" <i data-lucide="edit-3" class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></i>`;
+                    lucide.createIcons();
+                    hideInput();
+                }
+            } catch (err) {
+                alert("Failed to update mission.");
+            }
+        }
+
+        function hideInput() {
+            document.getElementById('mission-text').classList.remove('hidden');
+            document.getElementById('mission-input').classList.add('hidden');
+        }
+        // Add this at the bottom of your script section
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUnits(); // This fills the units for the default category on load
+        });
     </script>
 </body>
-</html>    
+</html>
