@@ -8,8 +8,10 @@ from dotenv import load_dotenv
 import csv
 from io import StringIO
 from flask import make_response
-
-
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from io import BytesIO
+from flask import send_file
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -26,18 +28,13 @@ db = SQLAlchemy(app)
 # --- LOGIN SETUP ---
 login_manager = LoginManager()
 login_manager.init_app(app)
-# Change this from 'login' to 'welcome'
 login_manager.login_view = 'welcome'
-
-
-
 
 # --- MODELS ---
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     org_access_code = db.Column(db.String(50), nullable=False)
-    # NEW: Branding field
     description = db.Column(db.String(255), default="Supporting our local community.")
 
 class User(UserMixin, db.Model):
@@ -46,8 +43,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False) 
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)
-    
-    # NEW: This allows us to call 'current_user.organization.name'
     organization = db.relationship('Organization', backref='members')
 
 class Item(db.Model):
@@ -55,6 +50,9 @@ class Item(db.Model):
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), default="General 📦")
     quantity = db.Column(db.Integer, default=1)
+    unit = db.Column(db.String(20), default="units")  # Add this!    
+    # NEW: Custom Threshold
+    low_threshold = db.Column(db.Integer, default=5) 
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
 
@@ -65,18 +63,15 @@ class ActivityLog(db.Model):
     item_name = db.Column(db.String(100))
     action = db.Column(db.String(50)) 
     change = db.Column(db.String(20))
-    # NEW: Link log to the organization
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Initialize DB and Test Users
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username='admin').first():
-        # High-performer note: use scrypt for consistency across the whole app
         db.session.add(User(username='admin', password=generate_password_hash('123', method='scrypt'), role='volunteer'))
         db.session.add(User(username='guest', password=generate_password_hash('123', method='scrypt'), role='donor'))
         db.session.commit()
@@ -99,39 +94,29 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         role = request.form.get('role')
-        reg_type = request.form.get('reg_type') # 'join' or 'create'
+        reg_type = request.form.get('reg_type')
 
-        # 1. Basic Check
         if User.query.filter_by(username=username).first():
             flash('Username taken.')
             return redirect(url_for('register'))
 
-        # 2. Logic: Create New Organization
         if reg_type == 'create':
             org_name = request.form.get('org_name')
             new_access_code = request.form.get('new_access_code')
-            
-            # Create the Org first
             new_org = Organization(name=org_name, org_access_code=new_access_code)
             db.session.add(new_org)
-            db.session.commit() # Commit to get the new_org.id
-            
+            db.session.commit()
             target_org_id = new_org.id
-            user_role = 'founder' # Founder is automatically a volunteer
-
-        # 3. Logic: Join Existing Organization
+            user_role = 'founder'
         else:
             access_code = request.form.get('access_code')
             org = Organization.query.filter_by(org_access_code=access_code).first()
-            
             if not org:
                 flash('Invalid Organization Access Code.')
                 return redirect(url_for('register'))
-            
             target_org_id = org.id
             user_role = role
 
-        # 4. Create User
         hashed_pw = generate_password_hash(password, method='scrypt')
         new_user = User(username=username, password=hashed_pw, role=user_role, org_id=target_org_id)
         db.session.add(new_user)
@@ -139,19 +124,17 @@ def register():
 
         flash(f'Success! Welcome to {Organization.query.get(target_org_id).name}')
         return redirect(url_for('login'))
-
     return render_template('register.html')
 
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('welcome')) # Redirects to Landing Page after logout
+    return redirect(url_for('welcome'))
 
 @app.route('/')
 @login_required
 def index():
     search_query = request.args.get('q', '')
-    # Filter everything by org_id immediately
     base_query = Item.query.filter_by(org_id=current_user.org_id)
     
     if search_query:
@@ -159,13 +142,12 @@ def index():
     else:
         items = base_query.order_by(Item.date_added.desc()).all()
     
-    logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    # Secure logs by org_id
+    logs = ActivityLog.query.filter_by(org_id=current_user.org_id).order_by(ActivityLog.timestamp.desc()).limit(10).all()
     return render_template('index.html', items=items, search_query=search_query, user=current_user, logs=logs)
 
 @app.route('/welcome')
 def welcome():
-    # We remove the "if current_user.is_authenticated: redirect" block 
-    # so users can see the landing page even while logged in.
     return render_template('welcome.html', user=current_user)
 
 @app.route('/add', methods=['POST'])
@@ -173,8 +155,15 @@ def welcome():
 def add_item():
     name = request.form.get('name')
     category = request.form.get('category')
-    # Assign the item to the user's organization!
-    new_item = Item(name=name, category=category, org_id=current_user.org_id)
+    unit = request.form.get('unit')
+    threshold = request.form.get('threshold', 5)
+    
+    # Verify current_user.org_id exists to prevent IntegrityError
+    if not current_user.org_id:
+        flash("User is not associated with an organization.")
+        return redirect(url_for('index'))
+
+    new_item = Item(name=name, category=category, org_id=current_user.org_id, low_threshold=int(threshold))
     db.session.add(new_item)
 
     log = ActivityLog(
@@ -199,14 +188,14 @@ def update(id, action):
         item.quantity += 1
     elif action == 'decrease' and item.quantity > 0:
         item.quantity -= 1
-    # NEW: Logging Logic
+
     change_text = "+1" if action == 'increase' else "-1"
     new_log = ActivityLog(
         username=current_user.username,
         item_name=item.name,
         action="Updated Qty",
         change=change_text,
-        org_id=current_user.org_id # CRITICAL: Tie it to the org
+        org_id=current_user.org_id
     )
     db.session.add(new_log)    
     db.session.commit()
@@ -215,7 +204,7 @@ def update(id, action):
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_item(id):
-    if current_user.role != 'volunteer':
+    if current_user.role not in ['volunteer', 'founder']:
         return jsonify({'error': 'Unauthorized'}), 403
     item = Item.query.get_or_404(id)
     db.session.delete(item)
@@ -234,63 +223,91 @@ def delete_item(id):
 @login_required
 def edit_item(id):
     item = Item.query.get_or_404(id)
-    # Security: Ensure only volunteers or the "owner" (if you add that later) can edit
-    if current_user.role != 'volunteer':
+    if current_user.role not in ['volunteer', 'founder']:
          return redirect(url_for('index'))
          
     item.name = request.form.get('name')
     item.category = request.form.get('category')
+    # Update threshold
+    item.low_threshold = int(request.form.get('threshold', 5))
+    
     db.session.commit()
     return redirect(url_for('index'))
 
-
-
-@app.route('/export')
+@app.route('/export_audit_xlsx')
 @login_required
-def export_csv():
-    # Only allow Volunteers to export
+def export_audit_xlsx():
     if current_user.role not in ['volunteer', 'founder']:
         return "Unauthorized", 403
+    
+    # FIX: Ensure we use 'ActivityLog' (matching the class name)
+    logs = ActivityLog.query.filter_by(org_id=current_user.org_id).order_by(ActivityLog.timestamp.desc()).all()
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Audit Trail"
+    
+    headers = ['Timestamp', 'User', 'Action', 'Item Name', 'Change']
+    ws.append(headers)
+    
+    header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
 
-    items = Item.query.filter_by(org_id=current_user.org_id).all()
+    for log in logs:
+        ws.append([
+            log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            log.username,
+            log.action.upper(),
+            log.item_name,
+            log.change
+        ])
+
+    # (Column width logic remains the same)
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except: pass
+        ws.column_dimensions[column].width = max_length + 2
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
     
-    si = StringIO()
-    cw = csv.writer(si)
-    cw.writerow(['Item Name', 'Category', 'Quantity', 'Date Added'])
+    # Secure filename
+    org_name = current_user.organization.name.replace(' ', '_') if current_user.organization else "Admin"
     
-    for item in items:
-        cw.writerow([item.name, item.category, item.quantity, item.date_added])
-    
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=inventory_report.csv"
-    output.headers["Content-type"] = "text/csv"
-    return output
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f"Shelf_Audit_{org_name}.xlsx"
+    )
 
 @app.route('/team')
 @login_required
 def team_management():
-    # 1. Security Check: Only Volunteers (Admins) should access this
     if current_user.role not in ['volunteer', 'founder']:
-        flash("Access Denied: You do not have administrative privileges.")
+        flash("Access Denied.")
         return redirect(url_for('index'))
 
-    # 2. Fetch all users belonging to the current user's organization
     all_members = User.query.filter_by(org_id=current_user.org_id).all()
-    
-    # 3. Categorize users using list comprehensions
-    # Group founders and volunteers together as the "Staff"
     volunteers = [user for user in all_members if user.role in ['volunteer', 'founder']]
     donors = [user for user in all_members if user.role == 'donor']
     
-    # 4. Fetch the 20 most recent logs specifically for this organization
     logs = ActivityLog.query.filter_by(org_id=current_user.org_id)\
                         .order_by(ActivityLog.timestamp.desc())\
                         .limit(10).all()
 
-    return render_template('team.html', 
-                           volunteers=volunteers, 
-                           donors=donors, 
-                           logs=logs)
+    return render_template('team.html', volunteers=volunteers, donors=donors, logs=logs)
 
 @app.route('/remove_member/<int:user_id>', methods=['POST'])
 @login_required
@@ -299,13 +316,10 @@ def remove_member(user_id):
         return jsonify({'error': 'Only the Founder can remove members'}), 403
     
     user_to_remove = User.query.get_or_404(user_id)
-    
-    # Ensure they are in the same org and you aren't deleting yourself
     if user_to_remove.org_id == current_user.org_id and user_to_remove.id != current_user.id:
         db.session.delete(user_to_remove)
         db.session.commit()
         return jsonify({'success': True})
-    
     return jsonify({'error': 'Invalid request'}), 400
 
 @app.route('/update_mission', methods=['POST'])
@@ -313,13 +327,9 @@ def remove_member(user_id):
 def update_mission():
     if current_user.role.lower() != 'founder':
         return jsonify({'error': 'Unauthorized'}), 403
-        
     data = request.get_json()
-    new_description = data.get('description')
-    
-    current_user.organization.description = new_description
+    current_user.organization.description = data.get('description')
     db.session.commit()
-    
     return jsonify({'success': True})
 
 if __name__ == "__main__":
