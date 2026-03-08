@@ -163,7 +163,7 @@ def add_item():
         flash("User is not associated with an organization.")
         return redirect(url_for('index'))
 
-    new_item = Item(name=name, category=category, org_id=current_user.org_id, low_threshold=int(threshold))
+    new_item = Item(name=name, category=category, unit=unit, org_id=current_user.org_id, low_threshold=int(threshold))
     db.session.add(new_item)
 
     log = ActivityLog(
@@ -334,3 +334,4 @@ def update_mission():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
