@@ -96,13 +96,12 @@
                 <form action="/add" method="POST" class="space-y-4">
                     <input type="text" name="name" placeholder="Item Name" required class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
                         <select name="category" id="categorySelect" onchange="updateUnits()" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
-                            <option value="Produce">Produce 🍎</option>
-                            <option value="Dairy">Dairy 🥛</option>
-                            <option value="Bakery">Bakery 🍞</option>
-                            <option value="Canned">Canned 🥫</option>
+                            <option value="Produce 🍎">Produce 🍎</option>
+                            <option value="Dairy 🥛">Dairy 🥛</option>
+                            <option value="Bakery 🍞">Bakery 🍞</option>
+                            <option value="Canned 🥫">Canned 🥫</option>
                             <option value="General 📦">General 📦</option>
-                        </select>                    
-                    
+                        </select>                        
                         <div class="relative">
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Unit of Measure</label>
                             <select name="unit" id="unitSelect" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium appearance-none">
@@ -256,7 +255,7 @@
                         <option value="Bakery 🍞">Bakery 🍞</option>
                         <option value="Canned 🥫">Canned 🥫</option>
                         <option value="General 📦">General 📦</option>
-                    </select>
+                    </select>                    
                 </div>
                 
                 {% if user.role in ['volunteer', 'founder'] %}
@@ -280,12 +279,12 @@
         lucide.createIcons();
         
         const categoryUnitMap = {
-            "Produce": ["kg", "g", "pcs", "Bundles", "Sacks"],
-            "Dairy": ["L", "ml", "pcs", "kg", "Cartons"],
-            "Canned": ["Cans", "Units", "Cases"],
-            "Bakery": ["pcs", "Loaves", "Dozens", "Boxes"],
+            "Produce 🍎": ["kg", "g", "pcs", "Bundles", "Sacks"],
+            "Dairy 🥛": ["L", "ml", "pcs", "kg", "Cartons"],
+            "Canned 🥫": ["Cans", "Units", "Cases"],
+            "Bakery 🍞": ["pcs", "Loaves", "Dozens", "Boxes"],
             "General 📦": ["units", "pcs", "kg", "L", "Boxes"]
-        };
+        };        
 
         function updateUnits() {
             const categorySelect = document.getElementById('categorySelect');
