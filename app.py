@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 from io import BytesIO
+from datetime import timedelta
+from sqlalchemy import nulls_last
+from flask_migrate import Migrate
 
 # Load env
 load_dotenv()
@@ -17,8 +20,16 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-123')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///shelf.db')
 app.config['VOLUNTEER_ACCESS_CODE'] = os.getenv('VOLUNTEER_ACCESS_CODE', 'JOIN-SHELF-2026')
+app.config.update(
+    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax'
+)
+
+
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -48,6 +59,7 @@ class Item(db.Model):
     low_threshold = db.Column(db.Integer, default=5)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
+    expiry_date = db.Column(db.DateTime, nullable=True)
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -128,20 +140,41 @@ def logout():
 @login_required
 def index():
     search_query = request.args.get('q', '')
-    base_query = Item.query.filter_by(org_id=current_user.org_id)
+    sort = request.args.get('sort', '')
 
+    items_query = Item.query.filter_by(org_id=current_user.org_id)
+
+    # SEARCH
     if search_query:
-        items = base_query.filter(
+        items_query = items_query.filter(
             (Item.name.contains(search_query)) |
             (Item.category.contains(search_query))
-        ).all()
+        )
+
+    # SORTING
+    if sort == "expiry_asc":
+        items_query = items_query.order_by(Item.expiry_date.asc())
+
+    elif sort == "expiry_desc":
+        items_query = items_query.order_by(Item.expiry_date.desc())
+
     else:
-        items = base_query.order_by(Item.date_added.desc()).all()
+        items_query = items_query.order_by(Item.date_added.desc())
+
+    items = items_query.all()
 
     logs = ActivityLog.query.filter_by(org_id=current_user.org_id)\
         .order_by(ActivityLog.timestamp.desc()).limit(10).all()
 
-    return render_template('index.html', items=items, search_query=search_query, user=current_user, logs=logs)
+    return render_template(
+        'index.html',
+        items=items,
+        search_query=search_query,
+        user=current_user,
+        logs=logs,
+        now=datetime.utcnow()
+    )    
+    
 
 @app.route('/welcome')
 def welcome():
@@ -159,11 +192,20 @@ def add_item():
     unit = request.form.get('unit')
     threshold = int(request.form.get('threshold', 5))
 
+    from datetime import datetime, timedelta
+
+    expiry_days = request.form.get('expiry_days')
+
+    expiry_date = None
+
+    if expiry_days and expiry_days.isdigit():
+        expiry_date = datetime.utcnow() + timedelta(days=int(expiry_days))
     new_item = Item(
         name=name,
         category=category,
         unit=unit,
         org_id=current_user.org_id,
+        expiry_date=expiry_date,
         low_threshold=threshold
     )
     db.session.add(new_item)
@@ -193,7 +235,11 @@ def update(id, action):
 
     if action == 'increase':
         item.quantity += 1
-    elif action == 'decrease' and item.quantity > 0:
+
+    elif action == 'decrease':
+        if item.quantity <= 0:
+            return jsonify({'error': 'Out of stock'}), 400
+
         item.quantity -= 1
 
     db.session.add(ActivityLog(
@@ -395,10 +441,106 @@ def export_audit_xlsx():
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center")
+    
+    # =========================
+    # EXPIRY ALERTS
+    # =========================
+    expiry_ws = wb.create_sheet(title="Expiry Tracker")
+
+    headers = [
+        "Item Name",
+        "Category",
+        "Quantity",
+        "Unit",
+        "Status",
+        "Expiry (Days)",
+        "Date Added"
+    ]
+
+    for col_num, header in enumerate(headers, 1):
+        cell = expiry_ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            start_color="2563EB",
+            end_color="2563EB",
+            fill_type="solid"
+        )
+        cell.alignment = Alignment(horizontal="center")
+
+    for row_num, item in enumerate(items, 2):
+
+        if item.expiry_date:
+            days_left = (item.expiry_date - datetime.utcnow()).days
+
+            if days_left < 0:
+                status = "EXPIRED"
+            elif days_left <= 3:
+                status = "URGENT"
+            elif days_left <= 7:
+                status = "WARNING"
+            else:
+                status = "SAFE"
+        else:
+            days_left = "N/A"
+            status = "NO EXPIRY"
+
+        expiry_ws.cell(row=row_num, column=1, value=item.name)
+        expiry_ws.cell(row=row_num, column=2, value=item.category)
+        expiry_ws.cell(row=row_num, column=3, value=item.quantity)
+        expiry_ws.cell(row=row_num, column=4, value=item.unit)
+        expiry_ws.cell(row=row_num, column=5, value=status)
+        expiry_ws.cell(row=row_num, column=6, value=days_left)
+        expiry_ws.cell(
+            row=row_num,
+            column=7,
+            value=item.date_added.strftime("%Y-%m-%d %H:%M")
+        )      
+
+        # Status coloring
+        status_cell = expiry_ws.cell(row=row_num, column=5)
+
+        if status == "EXPIRED":
+            status_cell.fill = PatternFill(
+                start_color="000000",
+                end_color="000000",
+                fill_type="solid"
+            )
+            status_cell.font = Font(color="FFFFFF", bold=True)
+
+        elif status == "URGENT":
+            status_cell.fill = PatternFill(
+                start_color="DC2626",
+                end_color="DC2626",
+                fill_type="solid"
+            )
+            status_cell.font = Font(color="FFFFFF", bold=True)
+
+        elif status == "WARNING":
+            status_cell.fill = PatternFill(
+                start_color="F59E0B",
+                end_color="F59E0B",
+                fill_type="solid"
+            )
+            status_cell.font = Font(color="FFFFFF", bold=True)
+
+        elif status == "SAFE":
+            status_cell.fill = PatternFill(
+                start_color="16A34A",
+                end_color="16A34A",
+                fill_type="solid"
+            )
+            status_cell.font = Font(color="FFFFFF", bold=True)
+
+    # Auto-size columns
+    for column_cells in expiry_ws.columns:
+        length = max(len(str(cell.value or "")) for cell in column_cells)
+        expiry_ws.column_dimensions[column_cells[0].column_letter].width = length + 5
 
     # =========================
     # 📁 EXPORT
-    # =========================
+    # ===========
+    # ==============
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -457,4 +599,4 @@ def update_mission():
     return jsonify({'success': True})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
