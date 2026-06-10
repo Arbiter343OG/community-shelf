@@ -5,14 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shelf.io | Community Impact</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        darkMode: "class"
+    }
+    </script>    
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
+
+        html,
+        body,
+        .bg-white,
+        .bg-slate-50,
+        .bg-slate-100,
+        .border-slate-200,
+        .border-slate-100,
+        .text-slate-900,
+        .text-slate-800,
+        .text-slate-700,
+        .text-slate-600,
+        .text-slate-500,
+        .text-slate-400,
+        .text-slate-300,
+        nav,
+        input,
+        select,
+        textarea,
+        button {
+            transition:
+                background-color .25s ease,
+                color .25s ease,
+                border-color .25s ease;
+        }        
+        
+        body{
+            font-family:'Inter',sans-serif;
+        }
+
+        .no-scrollbar::-webkit-scrollbar{
+            display:none;
+        }
+
+        :root{
+            --bg:#f8fafc;
+            --card:#ffffff;
+            --card-alt:#f8fafc;
+
+            --text:#0f172a;
+            --text-secondary:#475569;
+            --text-muted:#94a3b8;
+
+            --border:#e2e8f0;
+
+            --hover:#f1f5f9;
+
+            --shadow:0 0 0;
+        }
+
+        html.dark{
+            --bg:#020617;
+
+            --card:#0f172a;
+            --card-alt:#1e293b;
+
+            --text:#f8fafc;
+            --text-secondary:#cbd5e1;
+            --text-muted:#94a3b8;
+
+            --border:#334155;
+
+            --hover:#1e293b;
+
+            --shadow:0 10px 25px rgba(0,0,0,.35);
+        }
+
+        /*
+        ----------------------------------
+        GLOBAL TRANSITIONS
+        ----------------------------------
+        */
+
+        *,
+        *::before,
+        *::after{
+            transition:
+            background-color .3s ease,
+            color .3s ease,
+            border-color .3s ease,
+            box-shadow .3s ease,
+            opacity .3s ease,
+            transform .3s ease;
+        }
+
+        html{
+            background:var(--bg);
+        }
+
+        body{
+            background:var(--bg);
+            color:var(--text);
+        }
+
+        /*
+        ----------------------------------
+        CARDS
+        ----------------------------------
+        */
+
+        html.dark .bg-white{
+            background:var(--card)!important;
+        }
+
+        html.dark .bg-slate-50{
+            background:var(--card-alt)!important;
+        }
+
+        html.dark .bg-slate-100{
+            background:#1e293b!important;
+        }
+
+        /*
+        ----------------------------------
+        BORDERS
+        ----------------------------------
+        */
+
+        html.dark .border-slate-200{
+            border-color:var(--border)!important;
+        }
+
+        html.dark .border-slate-100{
+            border-color:var(--border)!important;
+        }
+
+        /*
+        ----------------------------------
+        TEXT
+        ----------------------------------
+        */
+
+        html.dark .text-slate-900{
+            color:var(--text)!important;
+        }
+
+        html.dark .text-slate-800{
+            color:#e2e8f0!important;
+        }
+
+        html.dark .text-slate-700{
+            color:#cbd5e1!important;
+        }
+
+        html.dark .text-slate-600{
+            color:#cbd5e1!important;
+        }
+
+        html.dark .text-slate-500{
+            color:var(--text-muted)!important;
+        }
+
+        html.dark .text-slate-400{
+            color:#64748b!important;
+        }
+
+        html.dark .text-slate-300{
+            color:#94a3b8!important;
+        }
+
+        /*
+        ----------------------------------
+        NAV
+        ----------------------------------
+        */
+
+        html.dark nav{
+            background:var(--card)!important;
+            border-color:var(--border)!important;
+            box-shadow:var(--shadow);
+        }
+
+        /*
+        ----------------------------------
+        MODAL
+        ----------------------------------
+        */
+
+        html.dark #editModal > div{
+            background:var(--card)!important;
+        }
+
+        /*
+        ----------------------------------
+        INPUTS
+        ----------------------------------
+        */
+
+        html.dark input,
+        html.dark textarea,
+        html.dark select{
+            background:var(--card-alt)!important;
+            color:var(--text)!important;
+            border-color:var(--border)!important;
+        }
+
+        html.dark input::placeholder,
+        html.dark textarea::placeholder{
+            color:#64748b!important;
+        }
+
+        /*
+        ----------------------------------
+        BUTTONS
+        ----------------------------------
+        */
+
+        html.dark .bg-slate-900{
+            background:#000!important;
+        }
+
+        html.dark .hover\:bg-slate-50:hover{
+            background:var(--hover)!important;
+        }
+
+        html.dark .hover\:bg-red-50:hover{
+            background:rgba(239,68,68,.15)!important;
+        }
+
+        html.dark .hover\:bg-blue-50:hover{
+            background:rgba(59,130,246,.15)!important;
+        }
+
+        html.dark .hover\:bg-green-50:hover{
+            background:rgba(34,197,94,.15)!important;
+        }
+
+        /*
+        ----------------------------------
+        INVENTORY
+        ----------------------------------
+        */
+
+        html.dark .bg-slate-900.text-white{
+            background:#000!important;
+        }
+
+        /*
+        ----------------------------------
+        SCROLLBAR
+        ----------------------------------
+        */
+
+        html.dark ::-webkit-scrollbar-track{
+            background:#020617;
+        }
+
+        html.dark ::-webkit-scrollbar-thumb{
+            background:#334155;
+        }
+
+        /*
+        ----------------------------------
+        DARK MODE BUTTON
+        ----------------------------------
+        */
+
+        #darkToggle{
+            transition:
+            opacity .25s ease,
+            transform .25s ease,
+            color .25s ease;
+        }
+
+        #darkToggle:hover{
+            transform:scale(1.05);
+        }
+
+        #darkToggle.switching{
+            opacity:.5;
+            transform:rotate(180deg);
+        }
+
+    </style>    
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 min-h-screen">
+<body class="min-h-screen">
 
 <nav class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
@@ -46,6 +322,10 @@
                     <i data-lucide="users" class="w-3 h-3"></i> Team Management
                 </a>
                 
+                <button onclick="toggleDarkMode()" id="darkToggle"
+                class="hidden md:flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest transition">
+                    🌙 Dark Mode
+                </button>                
                 <div class="h-8 w-[1px] bg-slate-100 hidden md:block"></div>
 
                 <div class="hidden md:flex flex-col items-end">
@@ -101,7 +381,15 @@
                             <option value="Bakery 🍞">Bakery 🍞</option>
                             <option value="Canned 🥫">Canned 🥫</option>
                             <option value="General 📦">General 📦</option>
-                        </select>                        
+                        </select>
+                    <input type="text" name="notes" placeholder="Optional Notes (e.g. For children, Fragile, etc.)" class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                    <input 
+                        type="number"
+                        name="expiry_days"
+                        placeholder="Expires in (days)"
+                        min="0"
+                        class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                    >                                                                             
                         <div class="relative">
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Unit of Measure</label>
                             <select name="unit" id="unitSelect" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium appearance-none">
@@ -162,11 +450,45 @@
         </aside>
 
         <main class="lg:col-span-8">
-            <form action="/" method="GET" class="relative mb-6">
-                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Search the shelf..." 
-                       class="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
-            </form>
+            <form action="/" method="GET" class="relative mb-6 flex items-center gap-3">
+
+                <!-- Search -->
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
+
+                    <input id="searchInput"
+                        type="text"
+                        name="q"
+                        value="{{ search_query }}"
+                        placeholder="Search the shelf..."
+                        class="w-full pl-12 pr-12 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+
+                    <button type="button"
+                        onclick="startVoice()"
+                        class="absolute right-3 top-2.5 p-2 bg-slate-100 rounded-xl hover:bg-blue-50 transition">
+                        <i data-lucide="mic" class="w-5 h-5 text-slate-500"></i>
+                    </button>
+                </div>
+
+                <!-- Sort Dropdown -->
+                <select name="sort"
+                    onchange="this.form.submit()"
+                    class="px-4 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none shadow-sm hover:border-blue-300 transition">
+
+                    <option value="">Sort</option>
+
+                    <option value="expiry_asc"
+                        {% if request.args.get('sort') == 'expiry_asc' %}selected{% endif %}>
+                        Expiry ↑ Soonest
+                    </option>
+
+                    <option value="expiry_desc"
+                        {% if request.args.get('sort') == 'expiry_desc' %}selected{% endif %}>
+                        Expiry ↓ Latest
+                    </option>
+
+                </select>
+            </form>                       
 
             <div class="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
                 <a href="/" class="px-5 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-50 transition">All</a>
@@ -189,12 +511,43 @@
                             <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase mb-2 inline-block italic">
                                 {{ item.category }}
                             </span>
-                            <h3 class="text-xl font-black text-slate-800 tracking-tight">{{ item.name }}</h3>
+                            <h3 class="text-xl font-black text-slate-800 dark:text-slate-100">{{ item.name }}</h3>
+                            {% if item.notes %}
+                            <p class="text-xs text-slate-400 italic mt-1">📝 {{ item.notes }}</p>
+                            {% endif %}                            
                             <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-1 font-bold">
                                 <i data-lucide="clock" class="w-3 h-3"></i> {{ item.date_added.strftime('%b %d, %I:%M %p') }}
                             </p>
+                            {% if item.expiry_date %}
+                                {% set days_left = (item.expiry_date.date() - now.date()).days %}
+                            {% endif %}                            
                         </div>
                         
+                        {% if item.expiry_date %}
+                            {% set days_left = (item.expiry_date.date() - now.date()).days %}
+
+                            {% if days_left < 0 %}
+                                <div class="bg-black text-white px-3 py-1 rounded-full text-[10px] font-black">
+                                    EXPIRED
+                                </div>
+
+                            {% elif days_left <= 3 %}
+                                <div class="bg-red-50 text-red-600 animate-pulse px-3 py-1 rounded-full text-[10px] font-black">
+                                    URGENT • {{ days_left }}d
+                                </div>
+
+                            {% elif days_left <= 7 %}
+                                <div class="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black">
+                                    Expires Soon • {{ days_left }}d
+                                </div>
+
+                            {% else %}
+                                <div class="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-black">
+                                    Fresh • {{ days_left }}d left
+                                </div>
+                            {% endif %}
+                        {% endif %}                                                
+
                         <div class="flex flex-col items-end gap-2">
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.category }}', '{{ item.low_threshold }}')" class="text-slate-400 hover:text-blue-500 p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
@@ -390,9 +743,148 @@
             document.getElementById('mission-input').classList.add('hidden');
         }
         // Add this at the bottom of your script section
-        document.addEventListener('DOMContentLoaded', () => {
-            updateUnits(); // This fills the units for the default category on load
-        });
+
+        let recognition;
+        let isListening = false;
+
+        function startVoice() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                alert("Voice search is not supported in this browser.");
+                return;
+            }
+
+            // Prevent double starts
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+
+            recognition.lang = 'en-US';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            const micButton = document.querySelector('[onclick="startVoice()"]');
+
+            recognition.onstart = () => {
+                isListening = true;
+
+                micButton.classList.remove('bg-slate-100');
+                micButton.classList.add('bg-red-100', 'animate-pulse');
+
+                micButton.innerHTML = `
+                    <i data-lucide="mic" class="w-5 h-5 text-red-500"></i>
+                `;
+
+                lucide.createIcons();
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+
+                document.getElementById('searchInput').value = transcript;
+
+                // Auto-search when final speech arrives
+                if (event.results[0].isFinal) {
+                    window.location.href = '/?q=' + encodeURIComponent(transcript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+
+                if (event.error === 'not-allowed') {
+                    alert('Microphone access denied.');
+                }
+
+                resetMicButton();
+            };
+
+            recognition.onend = () => {
+                resetMicButton();
+            };
+
+            recognition.start();
+        }
+
+        function resetMicButton() {
+            isListening = false;
+
+            const micButton = document.querySelector('[onclick="startVoice()"]');
+
+            micButton.classList.remove('bg-red-100', 'animate-pulse');
+            micButton.classList.add('bg-slate-100');
+
+            micButton.innerHTML = `
+                <i data-lucide="mic" class="w-5 h-5 text-slate-500"></i>
+            `;
+
+            lucide.createIcons();
+        }         
+
+        // ======================
+        // DARK MODE
+        // ======================
+
+        function applyTheme(theme) {
+
+            const html = document.documentElement;
+            const btn = document.getElementById("darkToggle");
+
+            if(theme === "dark"){
+                html.classList.add("dark");
+
+                if(btn){
+                    btn.innerHTML = "☀️ Light Mode";
+                }
+
+            }else{
+
+                html.classList.remove("dark");
+
+                if(btn){
+                    btn.innerHTML = "🌙 Dark Mode";
+                }
+
+            }
+
+            localStorage.setItem("theme", theme);
+        }
+
+        function toggleDarkMode(){
+
+            const isDark =
+                document.documentElement.classList.contains("dark");
+
+            applyTheme(
+                isDark ? "light" : "dark"
+            );
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            updateUnits();
+
+            const btn = document.getElementById("darkToggle");
+            const html = document.documentElement;
+
+            if (localStorage.getItem("theme") === "dark") {
+                html.classList.add("dark");
+                btn.innerHTML = "☀️ Light Mode";
+            } else {
+                html.classList.remove("dark");
+                btn.innerHTML = "🌙 Dark Mode";
+            }
+
+            lucide.createIcons();
+        });                                    
     </script>
 </body>
 </html>
